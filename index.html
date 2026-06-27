@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mood diario · Octavio</title>
+<style>
+  :root{
+    --bg:#0f1419; --card:#1a212b; --card2:#222b37; --line:#2d3947;
+    --txt:#eef2f6; --muted:#94a3b8; --accent:#4ade80; --accent2:#38bdf8;
+    --warn:#f59e0b; --bad:#ef4444; --pick:#3b82f6;
+    --r:18px; --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#16202c,var(--bg));color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 16px 60px;}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+  h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.2px}
+  .date{color:var(--muted);font-size:13px;margin-top:2px;text-transform:capitalize}
+  .streak{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 12px;
+    font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .greet{color:var(--muted);font-size:14px;margin:10px 2px 18px;line-height:1.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;
+    margin-bottom:14px;box-shadow:var(--shadow)}
+  .label{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .label .name{font-size:15px;font-weight:600}
+  .label .hint{font-size:11px;color:var(--muted)}
+  .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .opt{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 4px 8px;
+    text-align:center;cursor:pointer;transition:transform .08s ease,border-color .12s,background .12s;user-select:none}
+  .opt:active{transform:scale(.94)}
+  .opt .emo{font-size:30px;line-height:1.1;display:block}
+  .opt .cap{font-size:10px;color:var(--muted);margin-top:4px;height:13px}
+  .opt.sel{background:#23344a;border-color:var(--pick);box-shadow:0 0 0 2px rgba(59,130,246,.35) inset}
+  .opt.sel .cap{color:#cfe3ff}
+  .spark{margin-top:10px;height:30px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chip{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}
+  .chip.sel{background:#173a2a;border-color:var(--accent);color:#bbf7d0}
+  textarea{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--txt);
+    font:inherit;font-size:14px;padding:10px 12px;resize:vertical;min-height:46px}
+  textarea::placeholder{color:#64748b}
+  .save{position:sticky;bottom:14px;margin-top:6px}
+  button.primary{width:100%;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;
+    background:linear-gradient(180deg,#4ade80,#22c55e);color:#06210f;box-shadow:var(--shadow)}
+  button.primary:active{transform:scale(.99)}
+  .row{display:flex;gap:10px;margin-top:12px}
+  button.ghost{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+    padding:11px;font-size:13px;cursor:pointer}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#22c55e;color:#06210f;
+    padding:13px 20px;border-radius:14px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:50;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hist{font-size:13px;color:var(--muted);width:100%;border-collapse:collapse;margin-top:6px}
+  .hist th,.hist td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:center}
+  .hist th{color:#cbd5e1;font-weight:600}
+  .hist td:first-child,.hist th:first-child{text-align:left}
+  .hidden{display:none}
+  .foot{color:#64748b;font-size:11px;text-align:center;margin-top:18px;line-height:1.6}
+  a{color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Mood diario</h1>
+      <div class="date" id="fecha">—</div>
+    </div>
+    <div class="streak" id="streak">🔥 <span id="streakN">0</span></div>
+  </header>
+  <div class="greet" id="greet">Toca, no escribas. 15 segundos y listo.</div>
+
+  <div id="metrics"></div>
+
+  <div class="card">
+    <div class="label"><span class="name">✨ Lo mejor del día</span><span class="hint">opcional</span></div>
+    <div class="chips" id="chipsMejor"></div>
+    <textarea id="mejor" placeholder="Una línea: lo mejor de hoy…"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="label"><span class="name">🪨 Lo peor del día / qué pesó</span><span class="hint">opcional</span></div>
+    <div class="chips" id="chipsPeor"></div>
+    <textarea id="notas" placeholder="¿Qué te pesó? Suéltalo aquí…"></textarea>
+  </div>
+
+  <div class="save">
+    <button class="primary" id="guardar">Guardar el día</button>
+  </div>
+  <div class="row">
+    <button class="ghost" id="verHist">📊 Ver historial</button>
+    <button class="ghost" id="exportar">⬇️ Exportar a Excel (CSV)</button>
+  </div>
+
+  <div class="card hidden" id="histCard">
+    <div class="label"><span class="name">Últimos registros</span><span class="hint" id="histCount"></span></div>
+    <div style="overflow-x:auto"><table class="hist" id="histTable"></table></div>
+  </div>
+
+  <div class="foot">
+    Tus datos viven solo en este equipo, en este navegador. Exporta a CSV de vez en cuando para tu revisión mensual.<br>
+    Hecho para Octavio · escala 1–5 por toque.
+  </div>
+</div>
+<div class="toast" id="toast">Guardado ✓</div>
+
+<script>
+const KEY='mood_diario_v1';
+const METRICS=[
+  {id:'animo', name:'😊 Ánimo', hint:'1 bajo · 5 excelente',
+    emos:['😔','😕','😐','🙂','😄'], caps:['Bajo','','Neutro','','Excelente'], good:'high'},
+  {id:'energia', name:'⚡ Energía', hint:'ojo con la rodilla',
+    emos:['🪫','😮‍💨','🙂','💪','⚡'], caps:['En cero','','Ok','','A tope'], good:'high'},
+  {id:'sueno', name:'😴 Sueño anoche', hint:'qué tan descansado',
+    emos:['😵','🥱','😐','😌','🛌'], caps:['Fatal','','Regular','','De rey'], good:'high'},
+  {id:'estres', name:'🌪️ Estrés', hint:'1 en calma · 5 al límite',
+    emos:['😌','🙂','😐','😟','😰'], caps:['En calma','','Medio','','Al límite'], good:'low'}
+];
+const CHIPS=['Familia','Pareja','Fer','Andrés','Tony','Bici','Trabajo','Salud','Logro','Descanso','Amigos'];
+
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+const DOW=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const MON=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{};}}
+function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
+let DATA=load();
+let cur={animo:null,energia:null,sueno:null,estres:null,mejorChips:[],peorChips:[],mejor:'',notas:''};
+
+// fecha
+(function(){const d=new Date();
+ $('#fecha').textContent=DOW[d.getDay()]+', '+d.getDate()+' de '+MON[d.getMonth()]+' '+d.getFullYear();
+ const h=d.getHours();
+ $('#greet').textContent=(h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+
+   ', Octavio. Toca cómo viene el día — sin escribir, en segundos.';
+})();
+
+// build metrics
+function sparkSVG(id,good){
+  const days=[];const d=new Date();
+  for(let i=13;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);
+    const k=x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());
+    days.push(DATA[k]?DATA[k][id]:null);}
+  const W=260,H=30,n=days.length,step=W/(n-1);
+  let pts=[],circles='';
+  days.forEach((v,i)=>{if(v){const y=H-2-((v-1)/4)*(H-6);const x=i*step;pts.push([x,y]);
+    circles+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="${good==='low'? '#f59e0b':'#4ade80'}"/>`;}});
+  let path='';pts.forEach((p,i)=>{path+=(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)+' ';});
+  const stroke=good==='low'?'#f59e0b':'#4ade80';
+  if(pts.length<1)return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="30"><text x="0" y="20" fill="#64748b" font-size="11">Sin datos aún — empieza hoy</text></svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="30" preserveAspectRatio="none">
+    <path d="${path}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>${circles}</svg>`;
+}
+
+function renderMetrics(){
+  const wrap=$('#metrics');wrap.innerHTML='';
+  METRICS.forEach(m=>{
+    const card=document.createElement('div');card.className='card';
+    let opts='';
+    for(let i=0;i<5;i++){opts+=`<div class="opt" data-m="${m.id}" data-v="${i+1}">
+      <span class="emo">${m.emos[i]}</span><span class="cap">${m.caps[i]}</span></div>`;}
+    card.innerHTML=`<div class="label"><span class="name">${m.name}</span><span class="hint">${m.hint}</span></div>
+      <div class="scale">${opts}</div>
+      <div class="spark" id="spark_${m.id}">${sparkSVG(m.id,m.good)}</div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+    const m=o.dataset.m,v=+o.dataset.v;cur[m]=v;
+    wrap.querySelectorAll(`.opt[data-m="${m}"]`).forEach(x=>x.classList.toggle('sel',x===o));
+  }));
+}
+
+function buildChips(sel,curKey){
+  const c=$(sel);c.innerHTML='';
+  CHIPS.forEach(t=>{const el=document.createElement('div');el.className='chip';el.textContent=t;
+    el.addEventListener('click',()=>{el.classList.toggle('sel');
+      cur[curKey]=[...c.querySelectorAll('.chip.sel')].map(x=>x.textContent);});
+    c.appendChild(el);});
+}
+
+function prefillToday(){
+  const e=DATA[todayKey()];if(!e)return;
+  cur.animo=e.animo;cur.energia=e.energia;cur.sueno=e.sueno;cur.estres=e.estres;
+  cur.mejor=e.mejor||'';cur.notas=e.notas||'';cur.mejorChips=e.mejorChips||[];cur.peorChips=e.peorChips||[];
+  ['animo','energia','sueno','estres'].forEach(m=>{if(cur[m])
+    document.querySelector(`.opt[data-m="${m}"][data-v="${cur[m]}"]`)?.classList.add('sel');});
+  $('#mejor').value=cur.mejor;$('#notas').value=cur.notas;
+  document.querySelectorAll('#chipsMejor .chip').forEach(ch=>{if(cur.mejorChips.includes(ch.textContent))ch.classList.add('sel');});
+  document.querySelectorAll('#chipsPeor .chip').forEach(ch=>{if(cur.peorChips.includes(ch.textContent))ch.classList.add('sel');});
+  $('#guardar').textContent='Actualizar el día';
+}
+
+function calcStreak(){
+  let n=0;const d=new Date();
+  for(;;){const k=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    if(DATA[k]){n++;d.setDate(d.getDate()-1);}else break;}
+  return n;
+}
+function refreshStreak(){$('#streakN').textContent=calcStreak();}
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
+
+$('#guardar').addEventListener('click',()=>{
+  if(!cur.animo||!cur.energia||!cur.sueno||!cur.estres){toast('Toca las 4 caritas 🙂');return;}
+  const d=new Date();const k=todayKey();
+  DATA[k]={fecha:k,dia:DOW[d.getDay()],animo:cur.animo,energia:cur.energia,sueno:cur.sueno,
+    estres:cur.estres,mejorChips:cur.mejorChips,peorChips:cur.peorChips,
+    mejor:$('#mejor').value.trim(),notas:$('#notas').value.trim()};
+  save(DATA);refreshStreak();
+  METRICS.forEach(m=>$('#spark_'+m.id).innerHTML=sparkSVG(m.id,m.good));
+  $('#guardar').textContent='Actualizar el día';
+  const s=calcStreak();
+  toast(s>1?`Guardado ✓  🔥 ${s} días`:'Guardado ✓  ¡Arrancaste!');
+  renderHist();
+});
+
+function renderHist(){
+  const keys=Object.keys(DATA).sort().reverse().slice(0,14);
+  $('#histCount').textContent=Object.keys(DATA).length+' registros';
+  let h=`<tr><th>Fecha</th><th>😊</th><th>⚡</th><th>😴</th><th>🌪️</th><th>✨</th></tr>`;
+  keys.forEach(k=>{const e=DATA[k];
+    h+=`<tr><td>${k.slice(5)} · ${e.dia.slice(0,3)}</td><td>${e.animo}</td><td>${e.energia}</td>
+      <td>${e.sueno}</td><td>${e.estres}</td><td style="text-align:left;color:#cbd5e1">${(e.mejor||(e.mejorChips&&e.mejorChips.join(', '))||'').slice(0,22)}</td></tr>`;});
+  if(!keys.length)h+=`<tr><td colspan="6" style="color:#64748b">Aún sin registros</td></tr>`;
+  $('#histTable').innerHTML=h;
+}
+$('#verHist').addEventListener('click',()=>{$('#histCard').classList.toggle('hidden');renderHist();
+  $('#histCard').scrollIntoView({behavior:'smooth',block:'nearest'});});
+
+$('#exportar').addEventListener('click',()=>{
+  const keys=Object.keys(DATA).sort();
+  if(!keys.length){toast('Nada que exportar todavía');return;}
+  const head=['Fecha','Día','Ánimo (1-5)','Energía (1-5)','Calidad sueño (1-5)','Estrés (1-5)','Lo mejor del día','Lo peor del día / qué pesó'];
+  const rows=[head];
+  keys.forEach(k=>{const e=DATA[k];
+    const mejor=[e.mejor,(e.mejorChips||[]).join(' ')].filter(Boolean).join(' · ');
+    const peor=[e.notas,(e.peorChips||[]).join(' ')].filter(Boolean).join(' · ');
+    rows.push([e.fecha,e.dia,e.animo,e.energia,e.sueno,e.estres,mejor,peor]);});
+  const csv='﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Seguimiento_Animo_'+todayKey()+'.csv';a.click();
+  toast('CSV descargado ✓');
+});
+
+renderMetrics();buildChips('#chipsMejor','mejorChips');buildChips('#chipsPeor','peorChips');prefillToday();refreshStreak();renderHist();
+</script>
+</body>
+</html>
